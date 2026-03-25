@@ -105,6 +105,13 @@ class AgentHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.send_header("Vary", "Origin")
+        # ── Private Network Access (Chrome 98+) ────────────────────────────────
+        # Required so that HTTPS pages (skydatamigration.com) are allowed to
+        # fetch http://127.0.0.1:7789.  Without this header Chrome blocks the
+        # request with "ERR_BLOCKED_BY_PRIVATE_NETWORK_ACCESS_CHECKS" before
+        # it even reaches the server.
+        if self.headers.get("Access-Control-Request-Private-Network"):
+            self.send_header("Access-Control-Allow-Private-Network", "true")
 
     def _json(self, data: dict, status: int = 200) -> None:
         body = json.dumps(data, indent=2).encode()
