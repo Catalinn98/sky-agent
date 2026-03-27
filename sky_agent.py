@@ -29,6 +29,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import pystray
 from PIL import Image, ImageDraw, ImageFont
 
+from services.sap_logon_discovery import SAPLogonDiscoveryService
+
 # ── Configuration ──────────────────────────────────────────────────────────────
 
 AGENT_HOST    = "127.0.0.1"
@@ -87,10 +89,11 @@ class AgentHandler(BaseHTTPRequestHandler):
     """
     Minimal HTTP API for the Local Agent.
 
-    GET  /ping       – liveness check (used by SKY Workspace to detect the agent)
-    GET  /open       – bring SKY Workspace to foreground
-    GET  /status     – current agent status
-    POST /run-job    – accept a validation job
+    GET  /ping               – liveness check (used by SKY Workspace to detect the agent)
+    GET  /open               – bring SKY Workspace to foreground
+    GET  /status             – current agent status
+    GET  /sap-logon/systems  – discover SAP Logon entries from local machine
+    POST /run-job            – accept a validation job
     """
 
     def log_message(self, fmt, *args):  # noqa: D102  – suppress default log
@@ -155,6 +158,20 @@ class AgentHandler(BaseHTTPRequestHandler):
                 "workspace": SKY_WORKSPACE,
                 "timestamp": self._now(),
             })
+
+        elif self.path == "/sap-logon/systems":
+            log.info("SAP-LOGON  ← scanning local SAP Logon configuration")
+            try:
+                service = SAPLogonDiscoveryService()
+                result = service.discover()
+                self._json(result.to_dict())
+            except Exception as exc:
+                log.error("SAP Logon discovery failed: %s", exc)
+                self._json({
+                    "count": 0,
+                    "systems": [],
+                    "errors": [f"Discovery failed: {exc}"],
+                }, 500)
 
         else:
             self._json({"error": "not found"}, 404)
