@@ -5,13 +5,17 @@ block_cipher = None
 
 a = Analysis(
     ["sky_agent.py"],
-    pathex=[],
+    pathex=["."],
     binaries=[],
     datas=[],
     hiddenimports=[
         "pystray._win32",
         "PIL._tkinter_finder",
         "winreg",
+        "services",
+        "services.sap_logon_discovery",
+        "models",
+        "models.sap_system",
     ],
     hookspath=[],
     hooksconfig={},
