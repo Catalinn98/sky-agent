@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import threading
 from collections import deque
+from datetime import datetime, timezone
 from typing import Optional
 
 from models.job import Job, JobStatus
@@ -63,6 +64,14 @@ class JobManager:
             if self._active:
                 self._active.update_progress(progress, records, errors)
 
+    def _post_job_state(self) -> None:
+        """After a job ends, pick ONLINE or IDLE based on recent heartbeat."""
+        last = self._state.last_heartbeat
+        if last and (datetime.now(timezone.utc) - last).total_seconds() < 30:
+            self._state.set_state(AgentState.ONLINE)
+        else:
+            self._state.set_state(AgentState.IDLE)
+
     def complete_job(self, records: int = 0) -> Optional[Job]:
         with self._lock:
             job = self._active
@@ -72,7 +81,7 @@ class JobManager:
             self._history.appendleft(job)
             self._active = None
 
-        self._state.set_state(AgentState.IDLE)
+        self._post_job_state()
         log.info("JOB COMPLETED  →  %s  (%d records)", job.name, records)
 
         for cb in self._on_finish_callbacks:

@@ -200,6 +200,9 @@ class AgentHandler(BaseHTTPRequestHandler):
         # ── Existing API endpoints (unchanged contract) ────────────────────
         if self.path == "/ping":
             state_mgr.heartbeat()
+            # Workspace is actively communicating → mark as Online
+            if state_mgr.state == AgentState.IDLE:
+                state_mgr.set_state(AgentState.ONLINE)
             log.info("PING  ← SKY Workspace (agent detection)")
             self._json({
                 "status":    "ok",
@@ -366,6 +369,24 @@ def _run_server() -> None:
     server.serve_forever()
 
 
+HEARTBEAT_TIMEOUT = 30  # seconds without ping → revert to Idle
+
+
+def _heartbeat_watchdog() -> None:
+    """Background thread: if no /ping received for 30s, revert ONLINE → IDLE."""
+    while True:
+        time.sleep(10)
+        if state_mgr.state != AgentState.ONLINE:
+            continue
+        last = state_mgr.last_heartbeat
+        if last is None:
+            continue
+        elapsed = (datetime.now(timezone.utc) - last).total_seconds()
+        if elapsed > HEARTBEAT_TIMEOUT:
+            log.info("No workspace ping for %ds — reverting to Idle", int(elapsed))
+            state_mgr.set_state(AgentState.IDLE)
+
+
 # ── Entry Point ────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -387,13 +408,15 @@ def main() -> None:
     register_sky_protocol()
 
     # HTTP server in a background thread
-    thread = threading.Thread(target=_run_server, daemon=True)
-    thread.start()
+    threading.Thread(target=_run_server, daemon=True).start()
 
-    # Mark agent as online after server starts
+    # Heartbeat watchdog (reverts ONLINE → IDLE if workspace stops pinging)
+    threading.Thread(target=_heartbeat_watchdog, daemon=True).start()
+
+    # Mark agent as idle after server starts (will go ONLINE on first /ping)
     time.sleep(0.5)
     state_mgr.set_state(AgentState.IDLE)
-    log.info("Agent is online and idle — waiting for jobs")
+    log.info("Agent started — waiting for workspace connection")
 
     # Create tray manager and run (blocks — must be on main thread)
     tray = TrayManager(state_mgr, job_mgr, notifier)
