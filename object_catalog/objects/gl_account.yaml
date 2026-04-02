@@ -1,0 +1,74 @@
+# -----------------------------------------------------------
+# Object Catalog Definition — GL Account (SKA1 / SKAT / SKB1)
+# -----------------------------------------------------------
+
+object_code: gl_account
+display_name: G/L Account
+category: financial_data
+module: FI
+description: >
+  General Ledger account master data including chart of accounts
+  level and company code level data with descriptions.
+
+source_tables:
+  - table_name: SKA1
+    description: G/L Account Master — Chart of Accounts
+    primary_key: [MANDT, KTOPL, SAKNR]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: KTOPL,  description: Chart of Accounts,   type: CHAR, length: 4   }
+      - { name: SAKNR,  description: G/L Account Number,  type: CHAR, length: 10  }
+      - { name: BILKT,  description: Group Account Number, type: CHAR, length: 10 }
+      - { name: GVTYP,  description: P&L Statement Type,  type: CHAR, length: 1   }
+      - { name: XBILK,  description: Balance Sheet Acct,  type: CHAR, length: 1   }
+
+  - table_name: SKAT
+    description: G/L Account Texts
+    primary_key: [MANDT, SPRAS, KTOPL, SAKNR]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: SPRAS,  description: Language Key,         type: LANG, length: 1   }
+      - { name: KTOPL,  description: Chart of Accounts,   type: CHAR, length: 4   }
+      - { name: SAKNR,  description: G/L Account Number,  type: CHAR, length: 10  }
+      - { name: TXT20,  description: Short Text,           type: CHAR, length: 20  }
+      - { name: TXT50,  description: Long Text,            type: CHAR, length: 50  }
+
+  - table_name: SKB1
+    description: G/L Account Master — Company Code
+    primary_key: [MANDT, BUKRS, SAKNR]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: BUKRS,  description: Company Code,        type: CHAR, length: 4   }
+      - { name: SAKNR,  description: G/L Account Number,  type: CHAR, length: 10  }
+      - { name: MWSKZ,  description: Tax Category,        type: CHAR, length: 2   }
+      - { name: WAERS,  description: Currency,            type: CUKY, length: 5   }
+      - { name: XOPVW,  description: Open Item Mgmt,     type: CHAR, length: 1   }
+
+join_logic:
+  - type: LEFT_JOIN
+    left_table: SKA1
+    right_table: SKAT
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: KTOPL, right: KTOPL }
+      - { left: SAKNR, right: SAKNR }
+
+  - type: LEFT_JOIN
+    left_table: SKA1
+    right_table: SKB1
+    on:
+      - { left: MANDT,  right: MANDT }
+      - { left: SAKNR,  right: SAKNR }
+
+default_filters: []
+
+default_validations:
+  - mandatory_field_check
+  - duplicate_key_check
+  - chart_of_accounts_check
+
+output_format:
+  file_type: csv
+  delimiter: "|"
+  encoding: utf-8
+  header: true

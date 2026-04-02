@@ -1,0 +1,9 @@
+# Bundled runtime libraries — downloaded separately, not committed to git.
+# These are included in the SKY Agent distribution via build.bat + PyInstaller.
+#
+# Setup:
+#   jre/       — Minimal JRE built with jlink (see build_jre.bat)
+#   sapjco3/   — sapjco3.jar + sapjco3.dll from SAP Support Portal
+
+jre/
+sapjco3/

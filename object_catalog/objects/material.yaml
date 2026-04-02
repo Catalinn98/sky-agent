@@ -1,0 +1,81 @@
+# -----------------------------------------------------------
+# Object Catalog Definition — Material Master (MARA / MAKT / MARC)
+# -----------------------------------------------------------
+
+object_code: material
+display_name: Material Master
+category: master_data
+module: MM
+description: >
+  Material master data including general data, descriptions,
+  and plant-level data. Core object for logistics migration.
+
+source_tables:
+  - table_name: MARA
+    description: Material Master — General Data
+    primary_key: [MANDT, MATNR]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: MATNR,  description: Material Number,     type: CHAR, length: 18  }
+      - { name: MTART,  description: Material Type,       type: CHAR, length: 4   }
+      - { name: MBRSH,  description: Industry Sector,     type: CHAR, length: 1   }
+      - { name: MATKL,  description: Material Group,      type: CHAR, length: 9   }
+      - { name: MEINS,  description: Base Unit of Measure, type: UNIT, length: 3  }
+      - { name: BRGEW,  description: Gross Weight,        type: QUAN, length: 13  }
+      - { name: NTGEW,  description: Net Weight,          type: QUAN, length: 13  }
+      - { name: GEWEI,  description: Weight Unit,         type: UNIT, length: 3   }
+      - { name: LVORM,  description: Deletion Flag,       type: CHAR, length: 1   }
+
+  - table_name: MAKT
+    description: Material Descriptions
+    primary_key: [MANDT, MATNR, SPRAS]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: MATNR,  description: Material Number,     type: CHAR, length: 18  }
+      - { name: SPRAS,  description: Language Key,         type: LANG, length: 1   }
+      - { name: MAKTX,  description: Material Description, type: CHAR, length: 40 }
+
+  - table_name: MARC
+    description: Material Master — Plant Data
+    primary_key: [MANDT, MATNR, WERKS]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: MATNR,  description: Material Number,     type: CHAR, length: 18  }
+      - { name: WERKS,  description: Plant,               type: CHAR, length: 4   }
+      - { name: LVORM,  description: Deletion Flag,       type: CHAR, length: 1   }
+      - { name: EKGRP,  description: Purchasing Group,    type: CHAR, length: 3   }
+      - { name: DISMM,  description: MRP Type,            type: CHAR, length: 2   }
+
+join_logic:
+  - type: LEFT_JOIN
+    left_table: MARA
+    right_table: MAKT
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: MATNR, right: MATNR }
+
+  - type: LEFT_JOIN
+    left_table: MARA
+    right_table: MARC
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: MATNR, right: MATNR }
+
+default_filters:
+  - table: MARA
+    field: LVORM
+    operator: "!="
+    value: "X"
+    description: Exclude flagged-for-deletion materials
+
+default_validations:
+  - mandatory_field_check
+  - duplicate_key_check
+  - material_type_check
+  - unit_of_measure_check
+
+output_format:
+  file_type: csv
+  delimiter: "|"
+  encoding: utf-8
+  header: true

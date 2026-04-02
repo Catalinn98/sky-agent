@@ -1,0 +1,69 @@
+# -----------------------------------------------------------
+# Object Catalog Definition — Cost Center (CSKS / CSKT)
+# -----------------------------------------------------------
+# This file lives in the SKY Agent codebase, NOT per-project.
+# Projects reference this via object_code: cost_center
+# -----------------------------------------------------------
+
+object_code: cost_center
+display_name: Cost Center
+category: organizational_data
+module: CO
+description: >
+  Cost Center master data including descriptions.
+  Extracted from CSKS (master) joined with CSKT (texts).
+
+source_tables:
+  - table_name: CSKS
+    description: Cost Center Master Data
+    primary_key: [MANDT, KOKRS, KOSTL, DATBI]
+    fields:
+      - { name: MANDT,  description: Client,                type: CHAR,  length: 3  }
+      - { name: KOKRS,  description: Controlling Area,      type: CHAR,  length: 4  }
+      - { name: KOSTL,  description: Cost Center,           type: CHAR,  length: 10 }
+      - { name: DATBI,  description: Valid To Date,          type: DATS,  length: 8  }
+      - { name: DATAB,  description: Valid From Date,        type: DATS,  length: 8  }
+      - { name: VERAK,  description: Responsible Person,     type: CHAR,  length: 20 }
+      - { name: KOSAR,  description: Cost Center Category,   type: CHAR,  length: 1  }
+      - { name: BUKRS,  description: Company Code,           type: CHAR,  length: 4  }
+
+  - table_name: CSKT
+    description: Cost Center Texts
+    primary_key: [MANDT, SPRAS, KOKRS, KOSTL, DATBI]
+    fields:
+      - { name: MANDT,  description: Client,                type: CHAR, length: 3   }
+      - { name: SPRAS,  description: Language Key,          type: LANG, length: 1   }
+      - { name: KOKRS,  description: Controlling Area,      type: CHAR, length: 4   }
+      - { name: KOSTL,  description: Cost Center,           type: CHAR, length: 10  }
+      - { name: DATBI,  description: Valid To Date,          type: DATS, length: 8   }
+      - { name: KTEXT,  description: Short Description,     type: CHAR, length: 20  }
+      - { name: LTEXT,  description: Long Description,      type: CHAR, length: 40  }
+
+join_logic:
+  - type: LEFT_JOIN
+    left_table: CSKS
+    right_table: CSKT
+    on:
+      - { left: MANDT,  right: MANDT  }
+      - { left: KOKRS,  right: KOKRS  }
+      - { left: KOSTL,  right: KOSTL  }
+      - { left: DATBI,  right: DATBI  }
+
+default_filters:
+  - table: CSKS
+    field: DATBI
+    operator: ">="
+    value: "99991231"
+    description: Only current valid entries
+
+default_validations:
+  - mandatory_field_check
+  - duplicate_key_check
+  - date_range_check
+  - referential_integrity_check
+
+output_format:
+  file_type: csv
+  delimiter: "|"
+  encoding: utf-8
+  header: true

@@ -1,0 +1,86 @@
+# -----------------------------------------------------------
+# Object Catalog Definition — Customer (KNA1 / KNB1 / KNVV)
+# -----------------------------------------------------------
+
+object_code: customer
+display_name: Customer Master
+category: master_data
+module: SD
+description: >
+  Customer master data including general data, company code data,
+  and sales area data. Core object for AR and SD migration.
+
+source_tables:
+  - table_name: KNA1
+    description: Customer Master — General Data
+    primary_key: [MANDT, KUNNR]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: KUNNR,  description: Customer Number,     type: CHAR, length: 10  }
+      - { name: LAND1,  description: Country,             type: CHAR, length: 3   }
+      - { name: NAME1,  description: Name 1,              type: CHAR, length: 35  }
+      - { name: NAME2,  description: Name 2,              type: CHAR, length: 35  }
+      - { name: ORT01,  description: City,                type: CHAR, length: 35  }
+      - { name: PSTLZ,  description: Postal Code,         type: CHAR, length: 10  }
+      - { name: STRAS,  description: Street,              type: CHAR, length: 35  }
+      - { name: SPRAS,  description: Language,            type: LANG, length: 1   }
+      - { name: KTOKD,  description: Account Group,       type: CHAR, length: 4   }
+      - { name: LOEVM,  description: Deletion Flag,       type: CHAR, length: 1   }
+
+  - table_name: KNB1
+    description: Customer Master — Company Code Data
+    primary_key: [MANDT, KUNNR, BUKRS]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: KUNNR,  description: Customer Number,     type: CHAR, length: 10  }
+      - { name: BUKRS,  description: Company Code,        type: CHAR, length: 4   }
+      - { name: AKONT,  description: Recon Account,       type: CHAR, length: 10  }
+      - { name: ZTERM,  description: Payment Terms,       type: CHAR, length: 4   }
+      - { name: LOEVM,  description: Deletion Flag,       type: CHAR, length: 1   }
+
+  - table_name: KNVV
+    description: Customer Master — Sales Area Data
+    primary_key: [MANDT, KUNNR, VKORG, VTWEG, SPART]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: KUNNR,  description: Customer Number,     type: CHAR, length: 10  }
+      - { name: VKORG,  description: Sales Organization,  type: CHAR, length: 4   }
+      - { name: VTWEG,  description: Distribution Channel, type: CHAR, length: 2  }
+      - { name: SPART,  description: Division,            type: CHAR, length: 2   }
+      - { name: BZIRK,  description: Sales District,      type: CHAR, length: 6   }
+      - { name: KDGRP,  description: Customer Group,      type: CHAR, length: 2   }
+
+join_logic:
+  - type: LEFT_JOIN
+    left_table: KNA1
+    right_table: KNB1
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: KUNNR, right: KUNNR }
+
+  - type: LEFT_JOIN
+    left_table: KNA1
+    right_table: KNVV
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: KUNNR, right: KUNNR }
+
+default_filters:
+  - table: KNA1
+    field: LOEVM
+    operator: "!="
+    value: "X"
+    description: Exclude flagged-for-deletion customers
+
+default_validations:
+  - mandatory_field_check
+  - duplicate_key_check
+  - country_code_check
+  - account_group_check
+  - sales_area_consistency_check
+
+output_format:
+  file_type: csv
+  delimiter: "|"
+  encoding: utf-8
+  header: true

@@ -1,0 +1,64 @@
+# -----------------------------------------------------------
+# Object Catalog Definition — Profit Center (CEPC / CEPCT)
+# -----------------------------------------------------------
+
+object_code: profit_center
+display_name: Profit Center
+category: organizational_data
+module: CO
+description: >
+  Profit Center master data with descriptions.
+  Extracted from CEPC (master) joined with CEPCT (texts).
+
+source_tables:
+  - table_name: CEPC
+    description: Profit Center Master Data
+    primary_key: [MANDT, PRCTR, DATBI, KOKRS]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: PRCTR,  description: Profit Center,       type: CHAR, length: 10  }
+      - { name: DATBI,  description: Valid To Date,        type: DATS, length: 8   }
+      - { name: DATAB,  description: Valid From Date,      type: DATS, length: 8   }
+      - { name: KOKRS,  description: Controlling Area,    type: CHAR, length: 4   }
+      - { name: BUKRS,  description: Company Code,        type: CHAR, length: 4   }
+      - { name: VERAK,  description: Responsible Person,  type: CHAR, length: 20  }
+
+  - table_name: CEPCT
+    description: Profit Center Texts
+    primary_key: [MANDT, SPRAS, PRCTR, DATBI, KOKRS]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: SPRAS,  description: Language Key,         type: LANG, length: 1   }
+      - { name: PRCTR,  description: Profit Center,       type: CHAR, length: 10  }
+      - { name: DATBI,  description: Valid To Date,        type: DATS, length: 8   }
+      - { name: KOKRS,  description: Controlling Area,    type: CHAR, length: 4   }
+      - { name: KTEXT,  description: Short Description,   type: CHAR, length: 20  }
+      - { name: LTEXT,  description: Long Description,    type: CHAR, length: 40  }
+
+join_logic:
+  - type: LEFT_JOIN
+    left_table: CEPC
+    right_table: CEPCT
+    on:
+      - { left: MANDT,  right: MANDT  }
+      - { left: PRCTR,  right: PRCTR  }
+      - { left: DATBI,  right: DATBI  }
+      - { left: KOKRS,  right: KOKRS  }
+
+default_filters:
+  - table: CEPC
+    field: DATBI
+    operator: ">="
+    value: "99991231"
+    description: Only current valid entries
+
+default_validations:
+  - mandatory_field_check
+  - duplicate_key_check
+  - date_range_check
+
+output_format:
+  file_type: csv
+  delimiter: "|"
+  encoding: utf-8
+  header: true

@@ -1,0 +1,87 @@
+# -----------------------------------------------------------
+# Object Catalog Definition — Supplier (LFA1 / LFB1 / LFBK)
+# -----------------------------------------------------------
+
+object_code: supplier
+display_name: Supplier / Vendor Master
+category: master_data
+module: MM
+description: >
+  Vendor master data including general data, company code data,
+  and bank details. Core object for AP migration.
+
+source_tables:
+  - table_name: LFA1
+    description: Vendor Master — General Data
+    primary_key: [MANDT, LIFNR]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: LIFNR,  description: Vendor Number,       type: CHAR, length: 10  }
+      - { name: LAND1,  description: Country,             type: CHAR, length: 3   }
+      - { name: NAME1,  description: Name 1,              type: CHAR, length: 35  }
+      - { name: NAME2,  description: Name 2,              type: CHAR, length: 35  }
+      - { name: ORT01,  description: City,                type: CHAR, length: 35  }
+      - { name: PSTLZ,  description: Postal Code,         type: CHAR, length: 10  }
+      - { name: STRAS,  description: Street,              type: CHAR, length: 35  }
+      - { name: SPRAS,  description: Language,            type: LANG, length: 1   }
+      - { name: KTOKK,  description: Account Group,       type: CHAR, length: 4   }
+      - { name: LOEVM,  description: Deletion Flag,       type: CHAR, length: 1   }
+
+  - table_name: LFB1
+    description: Vendor Master — Company Code Data
+    primary_key: [MANDT, LIFNR, BUKRS]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: LIFNR,  description: Vendor Number,       type: CHAR, length: 10  }
+      - { name: BUKRS,  description: Company Code,        type: CHAR, length: 4   }
+      - { name: AKONT,  description: Recon Account,       type: CHAR, length: 10  }
+      - { name: ZTERM,  description: Payment Terms,       type: CHAR, length: 4   }
+      - { name: ZWELS,  description: Payment Methods,     type: CHAR, length: 10  }
+      - { name: LOEVM,  description: Deletion Flag,       type: CHAR, length: 1   }
+
+  - table_name: LFBK
+    description: Vendor Master — Bank Details
+    primary_key: [MANDT, LIFNR, BANKS, BANKL, BANKN]
+    fields:
+      - { name: MANDT,  description: Client,              type: CHAR, length: 3   }
+      - { name: LIFNR,  description: Vendor Number,       type: CHAR, length: 10  }
+      - { name: BANKS,  description: Bank Country,        type: CHAR, length: 3   }
+      - { name: BANKL,  description: Bank Key,            type: CHAR, length: 15  }
+      - { name: BANKN,  description: Bank Account,        type: CHAR, length: 18  }
+      - { name: BKONT,  description: Bank Control Key,    type: CHAR, length: 2   }
+      - { name: KOINH,  description: Account Holder,      type: CHAR, length: 60  }
+
+join_logic:
+  - type: LEFT_JOIN
+    left_table: LFA1
+    right_table: LFB1
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: LIFNR, right: LIFNR }
+
+  - type: LEFT_JOIN
+    left_table: LFA1
+    right_table: LFBK
+    on:
+      - { left: MANDT, right: MANDT }
+      - { left: LIFNR, right: LIFNR }
+
+default_filters:
+  - table: LFA1
+    field: LOEVM
+    operator: "!="
+    value: "X"
+    description: Exclude flagged-for-deletion vendors
+
+default_validations:
+  - mandatory_field_check
+  - duplicate_key_check
+  - country_code_check
+  - bank_detail_check
+  - account_group_check
+
+output_format:
+  file_type: csv
+  delimiter: "|"
+  encoding: utf-8
+  header: true

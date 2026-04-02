@@ -1,0 +1,88 @@
+# -----------------------------------------------------------
+# Common Validation Rules — Reusable across all objects
+# -----------------------------------------------------------
+# Referenced by object definitions via default_validations list.
+# The validation engine uses these codes to select check logic.
+# -----------------------------------------------------------
+
+validation_code: common_validations
+description: Standard validation rules applied across data objects.
+
+rules:
+  - code: mandatory_field_check
+    display_name: Mandatory Field Check
+    description: Verifies all primary key fields and required fields are non-empty.
+    severity: error
+    scope: preload
+
+  - code: duplicate_key_check
+    display_name: Duplicate Key Check
+    description: Detects duplicate records based on primary key definition.
+    severity: error
+    scope: preload
+
+  - code: date_range_check
+    display_name: Date Range Validity
+    description: Validates valid-from <= valid-to and dates are in expected ranges.
+    severity: warning
+    scope: preload
+
+  - code: referential_integrity_check
+    display_name: Referential Integrity
+    description: Cross-checks foreign key references exist in related objects.
+    severity: warning
+    scope: preload
+
+  - code: country_code_check
+    display_name: Country Code Validation
+    description: Validates country codes against ISO 3166-1 alpha-2.
+    severity: error
+    scope: preload
+
+  - code: bank_detail_check
+    display_name: Bank Detail Validation
+    description: Validates bank key and account number formats per country rules.
+    severity: error
+    scope: preload
+
+  - code: account_group_check
+    display_name: Account Group Validation
+    description: Validates account group exists in target system config tables.
+    severity: warning
+    scope: preload
+
+  - code: chart_of_accounts_check
+    display_name: Chart of Accounts Validation
+    description: Validates COA assignments are consistent and complete.
+    severity: error
+    scope: preload
+
+  - code: material_type_check
+    display_name: Material Type Validation
+    description: Validates material type is valid for target system configuration.
+    severity: error
+    scope: preload
+
+  - code: unit_of_measure_check
+    display_name: Unit of Measure Validation
+    description: Validates UoM codes exist in target system.
+    severity: warning
+    scope: preload
+
+  - code: sales_area_consistency_check
+    display_name: Sales Area Consistency
+    description: Validates sales org / dist channel / division combinations.
+    severity: error
+    scope: preload
+
+  - code: postload_record_count_check
+    display_name: Post-Load Record Count
+    description: Compares record counts between extraction and loaded data.
+    severity: error
+    scope: postload
+
+  - code: postload_key_match_check
+    display_name: Post-Load Key Match
+    description: Verifies all extracted keys exist in target after load.
+    severity: error
+    scope: postload
